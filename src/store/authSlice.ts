@@ -1,62 +1,43 @@
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { message } from 'antd';
-import { API_HOST, API_ENDPOINTS } from '../config/apiConfig';
-
-interface AuthTokens {
-  access: string;
-  refresh: string;
-}
-
-interface UserPayload {
-  user_id: string;
-  email: string;
-  exp: number;
-  iat: number;
-}
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { LoginRequest, AuthResponse, User } from '../types/task';
+import { taskService } from '../services/taskService';
 
 interface AuthState {
-  user: UserPayload | null;
-  authTokens: AuthTokens | null;
   isAuthenticated: boolean;
+  user: User | null;
   loading: boolean;
+  error: string | null;
 }
 
-const parseJwt = (token: string): UserPayload | null => {
-  try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(base64));
-  } catch (e) {
-    return null;
-  }
-};
-
-const getInitialTokens = (): AuthTokens | null => {
-  const tokenString = localStorage.getItem('authTokens');
-  return tokenString ? JSON.parse(tokenString) : null;
-};
-
-const initialTokens = getInitialTokens();
-
 const initialState: AuthState = {
-  user: initialTokens ? parseJwt(initialTokens.access) : null,
-  authTokens: initialTokens,
-  isAuthenticated: !!initialTokens,
+  isAuthenticated: !!localStorage.getItem('access_token'),
+  user: null,
   loading: false,
+  error: null,
 };
 
-export const loginUser = createAsyncThunk(
-  'auth/loginUser',
-  async ({ email, password }: { email: string; password: string }) => {
-    const res = await fetch(`${API_HOST}${API_ENDPOINTS.LOGIN}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+export const login = createAsyncThunk(
+  'auth/login',
+  async (credentials: LoginRequest) => {
+    const response = await taskService.login(credentials);
+    localStorage.setItem('access_token', response.access);
+    localStorage.setItem('refresh_token', response.refresh);
+    return response;
+  }
+);
 
-    if (!res.ok) throw new Error('Login failed');
-    const data: AuthTokens = await res.json();
-    localStorage.setItem('authTokens', JSON.stringify(data));
-    return data;
+export const register = createAsyncThunk(
+  'auth/register',
+  async (userData: RegisterRequest) => {
+    await taskService.register(userData);
+    return userData;
+  }
+);
+
+export const getProfile = createAsyncThunk(
+  'auth/getProfile',
+  async () => {
+    return await taskService.getProfile();
   }
 );
 
@@ -64,33 +45,46 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout(state) {
-      state.user = null;
-      state.authTokens = null;
+    logout: (state) => {
       state.isAuthenticated = false;
-      localStorage.removeItem('authTokens');
-      message.success('Logged out');
+      state.user = null;
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    },
+    clearError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => {
+      .addCase(login.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
-      .addCase(loginUser.fulfilled, (state, action) => {
+      .addCase(login.fulfilled, (state) => {
         state.loading = false;
-        state.authTokens = action.payload;
-        state.user = parseJwt(action.payload.access);
         state.isAuthenticated = true;
-        message.success('Login successful');
       })
-      .addCase(loginUser.rejected, (state) => {
+      .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        message.error('Invalid credentials');
+        state.error = action.error.message || 'Login failed';
+      })
+      .addCase(getProfile.fulfilled, (state, action: PayloadAction<User>) => {
+        state.user = action.payload;
+      })
+      .addCase(register.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Registration failed';
       });
   },
 });
 
-export const { logout } = authSlice.actions;
-
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;
