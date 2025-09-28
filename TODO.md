@@ -1,48 +1,27 @@
-# UI Overhaul Plan
+# Work Tracker API Integration TODO
 
-## Step 1: Install Dependencies
-- Install lucide-react for icons
-- Install framer-motion for animations (optional)
-
-## Step 2: Add Dark Mode Support
-- Create DarkModeContext
-- Add dark mode toggle to Header
-- Update global styles for dark mode
-
-## Step 3: Modernize Global Styles
-- Update index.css with modern color palette, gradients, and utilities
-- Add custom CSS variables for themes
-
-## Step 4: Enhance Header Component
-- Add app logo/icon
-- Improve layout and styling
-- Add dark mode toggle
-
-## Step 5: Upgrade TaskDashboard
-- Add gradient backgrounds
-- Improve stats cards with icons and animations
-- Better responsive grid
-
-## Step 6: Modernize TaskTable
-- Add icons for actions and status
-- Improve table styling with hover effects
-- Better filter UI
-
-## Step 7: Enhance TaskModal and TaskForm
-- Larger, better positioned modal
-- Add animations
-- Modern form inputs with icons and better validation feedback
-
-## Step 8: Upgrade Auth Components
-- Modernize SimpleAuth, LoginForm, RegisterForm
-- Add icons, gradients, better layouts
-
-## Step 9: Add Animations and Transitions
-- Page transitions
-- Loading animations
-- Hover effects
-
-## Step 10: Test and Refine
-- Ensure responsiveness
-- Test dark mode
-- Polish details
+- [x] Update src/config/apiConfig.ts with Work Tracker endpoints
+- [x] Create src/types/attendance.ts, leave.ts, holiday.ts, project.ts, worklog.ts
+- [x] Create src/services/attendanceService.ts
+- [x] Create src/services/leaveService.ts
+- [x] Create src/services/holidayService.ts
+- [x] Create src/services/projectService.ts
+- [x] Create src/services/worklogService.ts
+- [x] Create src/store/index.ts (Redux store setup)
+- [x] Create src/store/slices/authSlice.ts (login/logout thunks)
+- [x] Create src/store/slices/attendanceSlice.ts (check-in/out/fetch thunks)
+- [x] Create src/store/slices/leaveSlice.ts (apply/fetch leave thunks)
+- [x] Create src/store/slices/holidaySlice.ts (CRUD thunks for holidays)
+- [x] Create src/store/slices/projectSlice.ts (add/fetch worklog thunks)
+- [x] Create src/store/slices/worklogSlice.ts (add/fetch worklog thunks)
+- [x] Update src/services/authService.ts to export authService class with login/logout methods
+- [x] Update src/main.tsx to include Toaster and use new store
+- [x] Update src/components/HolidayPage.tsx with Redux, toast, and SweetAlert2
+- [x] Create src/components/LoginPage.tsx
+- [x] Create src/components/AttendancePage.tsx
+- [x] Create src/components/LeavePage.tsx
+- [x] Create src/components/ProjectWorkPage.tsx
+- [x] Update src/App.tsx to use React Router
+- [x] Add navigation component for pages
+- [x] Install react-hot-toast and sweetalert2
+- [ ] Test integration and fix any issues

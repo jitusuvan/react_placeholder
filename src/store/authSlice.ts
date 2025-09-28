@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { LoginRequest, AuthResponse, User } from '../types/task';
+import { LoginRequest, AuthResponse, User, RegisterRequest } from '../types/task';
 import { taskService } from '../services/taskService';
 
 interface AuthState {
@@ -71,6 +71,12 @@ const authSlice = createSlice({
       })
       .addCase(getProfile.fulfilled, (state, action: PayloadAction<User>) => {
         state.user = action.payload;
+      })
+      .addCase(getProfile.rejected, (state) => {
+        state.isAuthenticated = false;
+        state.user = null;
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
       })
       .addCase(register.pending, (state) => {
         state.loading = true;
