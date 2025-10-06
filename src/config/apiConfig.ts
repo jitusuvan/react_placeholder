@@ -1,4 +1,4 @@
-export const API_HOST = 'http://localhost:8000'; // Adjust to your backend URL
+export const API_HOST = 'http://localhost:8002'; // Adjust to your backend URL
 
 export const API_ENDPOINTS = {
   // Authentication
