@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addAccount, updateAccount, deleteAccount, searchAccounts, setCurrentPage } from '../store/accountSlice';
+import { fetchAccounts, createAccount, updateAccount, deleteAccount, searchAccounts, setCurrentPage } from '../store/accountSlice';
 import { logout } from '../store/authSlice';
 
 const AccountCRUD: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { filteredAccounts, currentPage, itemsPerPage, searchTerm } = useAppSelector(state => state.accounts);
+  const { filteredAccounts, currentPage, itemsPerPage, searchTerm, loading, error } = useAppSelector(state => state.accounts);
   
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -20,16 +20,23 @@ const AccountCRUD: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentAccounts = filteredAccounts.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    dispatch(fetchAccounts());
+  }, [dispatch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      dispatch(updateAccount({ ...formData, id: editingId }));
-    } else {
-      dispatch(addAccount(formData));
+    try {
+      if (editingId) {
+        await dispatch(updateAccount({ id: editingId, data: formData })).unwrap();
+      } else {
+        await dispatch(createAccount(formData)).unwrap();
+      }
+      resetForm();
+    } catch (error) {
+      console.error('Operation failed:', error);
     }
-    
-    resetForm();
   };
 
   const handleEdit = (account: any) => {
@@ -38,9 +45,13 @@ const AccountCRUD: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Delete this account?')) {
-      dispatch(deleteAccount(id));
+      try {
+        await dispatch(deleteAccount(id)).unwrap();
+      } catch (error) {
+        console.error('Delete failed:', error);
+      }
     }
   };
 
@@ -89,6 +100,13 @@ const AccountCRUD: React.FC = () => {
         />
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
       {/* Form */}
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow mb-6">
@@ -123,9 +141,10 @@ const AccountCRUD: React.FC = () => {
             <div className="col-span-3 flex space-x-4">
               <button
                 type="submit"
-                className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                disabled={loading}
+                className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
               >
-                {editingId ? 'Update' : 'Add'}
+                {loading ? 'Saving...' : editingId ? 'Update' : 'Add'}
               </button>
               <button
                 type="button"

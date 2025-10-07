@@ -1,44 +1,58 @@
-import { createSlice } from '@reduxjs/toolkit';
-
-interface User {
-  username: string;
-  password: string;
-}
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface AuthState {
   isAuthenticated: boolean;
-  users: User[];
+  loading: boolean;
+  error: string | null;
 }
 
 const initialState: AuthState = {
-  isAuthenticated: !!sessionStorage.getItem('isLoggedIn'),
-  users: JSON.parse(sessionStorage.getItem('users') || '[]'),
+  isAuthenticated: !!localStorage.getItem('access_token'),
+  loading: false,
+  error: null,
 };
+
+export const login = createAsyncThunk(
+  'auth/login',
+  async (credentials: { username: string; password: string }) => {
+    const response = await fetch('http://localhost:8000/api/token/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    });
+    
+    if (!response.ok) throw new Error('Login failed');
+    const data = await response.json();
+    localStorage.setItem('access_token', data.access);
+    return data;
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    register: (state, action) => {
-      state.users.push(action.payload);
-      sessionStorage.setItem('users', JSON.stringify(state.users));
-    },
-    login: (state, action) => {
-      const user = state.users.find(u => 
-        u.username === action.payload.username && 
-        u.password === action.payload.password
-      );
-      if (user) {
-        state.isAuthenticated = true;
-        sessionStorage.setItem('isLoggedIn', 'true');
-      }
-    },
     logout: (state) => {
       state.isAuthenticated = false;
-      sessionStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('access_token');
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(login.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(login.fulfilled, (state) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Login failed';
+      });
   },
 });
 
-export const { register, login, logout } = authSlice.actions;
+export const { logout } = authSlice.actions;
 export default authSlice.reducer;

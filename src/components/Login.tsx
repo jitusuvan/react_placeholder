@@ -1,30 +1,18 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { login, register } from '../store/authSlice';
+import { login } from '../store/authSlice';
 
 const Login: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [isRegister, setIsRegister] = useState(false);
+  const { loading, error } = useAppSelector(state => state.auth);
   const [formData, setFormData] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
-    if (isRegister) {
-      dispatch(register(formData));
-      setIsRegister(false);
-      alert('Account created! Please login.');
-    } else {
-      const users = JSON.parse(sessionStorage.getItem('users') || '[]');
-      const user = users.find((u: any) => u.username === formData.username && u.password === formData.password);
-      
-      if (user) {
-        dispatch(login(formData));
-      } else {
-        setError('Invalid credentials');
-      }
+    try {
+      await dispatch(login(formData)).unwrap();
+    } catch (error) {
+      console.error('Login failed:', error);
     }
     setFormData({ username: '', password: '' });
   };
@@ -33,7 +21,7 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
         <h2 className="text-2xl font-bold text-center mb-6">
-          {isRegister ? 'Create Account' : 'Login'}
+          Login
         </h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,21 +49,12 @@ const Login: React.FC = () => {
           
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 disabled:opacity-50"
           >
-            {isRegister ? 'Create Account' : 'Login'}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        
-        <p className="text-center mt-4">
-          {isRegister ? 'Already have an account?' : "Don't have an account?"}
-          <button
-            onClick={() => setIsRegister(!isRegister)}
-            className="text-blue-600 ml-2 hover:underline"
-          >
-            {isRegister ? 'Login' : 'Create Account'}
-          </button>
-        </p>
       </div>
     </div>
   );
